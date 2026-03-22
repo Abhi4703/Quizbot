@@ -3,3 +3,13 @@ tgcrypto
 pymongo
 motor
 python-dotenv
+aiohttp
+aiofiles
+requests
+beautifulsoup4
+lxml
+Pillow
+sympy
+pycryptodome
+Unidecode
+playwright

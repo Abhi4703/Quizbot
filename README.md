@@ -9,10 +9,15 @@
 [![PTB](https://img.shields.io/badge/python--telegram--bot-20.x-0088CC?logo=telegram)](https://python-telegram-bot.org)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?logo=mongodb)](https://mongodb.com)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Deploy to Heroku](https://img.shields.io/badge/Deploy%20to-Heroku-430098?logo=heroku)](https://heroku.com)
 
 ---
 
 **Sponsored by [Qzio](https://qzio.in) &nbsp;•&nbsp; Developed by [devgagan](https://devgagan.in)**
+
+---
+
+### 🤖 Try the Live Bot → [@advance_quiz_bot](https://t.me/advance_quiz_bot)
 
 </div>
 
@@ -24,6 +29,7 @@
 - [Architecture](#-architecture)
 - [Prerequisites](#-prerequisites)
 - [Quick Start](#-quick-start)
+- [Deploy on Heroku (PaaS)](#-deploy-on-heroku-paas)
 - [VPS Setup — Step-by-Step](#-vps-setup--step-by-step)
 - [Running the Bots](#-running-the-bots)
   - [Running Both Bots Together](#running-both-bots-together)
@@ -97,6 +103,157 @@ playwright install chromium   # needed for PDF generation
 python main.py &
 python bot.py  &
 ```
+
+---
+
+## 🚀 Deploy on Heroku (PaaS)
+
+Deploy Quizbot to Heroku without managing a server. Both bots run as separate dynos using the same MongoDB Atlas database.
+
+> **Requirements:** A free [Heroku account](https://signup.heroku.com), a [GitHub account](https://github.com), and a [MongoDB Atlas](https://mongodb.com/atlas) cluster.
+
+---
+
+### Step 1 — Fork the Repository
+
+1. Go to [github.com/devgaganin/Quizbot](https://github.com/devgaganin/Quizbot)
+2. Click the **Fork** button (top-right corner)
+3. Select your GitHub account as the destination
+4. Your fork will be at `https://github.com/<your-username>/Quizbot`
+
+---
+
+### Step 2 — Add the Required Files
+
+Heroku needs two files that may not be in the repo. Check your fork and add them if missing.
+
+#### `Procfile` (tells Heroku what processes to run)
+
+Create a file named exactly `Procfile` (no extension) in the repo root:
+
+```
+main: python main.py
+bot: python bot.py
+```
+
+> Each line becomes a **dyno type** — `main` runs `main.py` and `bot` runs `bot.py`.
+
+#### `runtime.txt` (pins the Python version)
+
+Create `runtime.txt` in the repo root:
+
+```
+python-3.11.9
+```
+
+Commit and push both files to your fork before continuing.
+
+---
+
+### Step 3 — Create a New Heroku App
+
+1. Log in at [dashboard.heroku.com](https://dashboard.heroku.com)
+2. Click **New → Create new app**
+3. Choose an **App name** (e.g. `my-quizbot`) and your region
+4. Click **Create app**
+
+---
+
+### Step 4 — Connect GitHub
+
+1. On your app's dashboard, open the **Deploy** tab
+2. Under **Deployment method**, click **GitHub**
+3. Click **Connect to GitHub** and authorise Heroku
+4. Search for `Quizbot` (your fork) and click **Connect**
+
+![Heroku Deploy Tab](https://i.imgur.com/placeholder-deploy.png)
+*(Deploy tab → GitHub → search your fork → Connect)*
+
+---
+
+### Step 5 — Fill in Config Vars (Environment Variables)
+
+1. Go to the **Settings** tab of your Heroku app
+2. Click **Reveal Config Vars**
+3. Add each variable from the table below — click **Add** after every key/value pair
+
+| Key | Value |
+|---|---|
+| `API_ID` | Your Telegram API ID |
+| `API_HASH` | Your Telegram API Hash |
+| `BOT_TOKEN` | Token for the Pyrogram bot (main.py) |
+| `BOT_TOKEN_2` | Token for the PTB scheduler bot (bot.py) |
+| `MONGO_URI` | Primary MongoDB Atlas connection string |
+| `MONGO_URI_2` | Secondary MongoDB connection string |
+| `MONGO_URIX` | Async quizzes collection MongoDB URI |
+| `DB_NAME` | `quiz_bot` (or your chosen DB name) |
+| `OWNER_ID` | Your Telegram user ID |
+| `LOG_GROUP` | Negative chat ID of your log channel |
+| `FORCE_SUB` | Channel ID users must join |
+| `BOT_GROUP` | Community group ID |
+| `CHANNEL_ID` | Announcement channel ID |
+| `MASTER_KEY` | AES key for quiz encryption |
+| `IV_KEY` | AES IV prefix |
+| `FREEMIUM_LIMIT` | `0` (unlimited) or a number |
+| `PREMIUM_LIMIT` | `500` (default) |
+| `FREE_BOT` | `true` to skip premium checks |
+
+> See [Configuration Reference](#-configuration-reference) for full descriptions of each variable.
+
+---
+
+### Step 6 — Deploy the Branch
+
+1. Still on the **Deploy** tab, scroll to **Manual deploy**
+2. Select your branch (usually `main` or `master`)
+3. Click **Deploy Branch**
+4. Wait for the build to finish — you'll see a green ✅ and the message **"Your app was successfully deployed"**
+
+Optionally enable **Automatic Deploys** so every push to your fork re-deploys automatically.
+
+---
+
+### Step 7 — Turn On Both Dynos
+
+After a successful deploy, the two processes from your `Procfile` appear as dynos.
+
+1. Go to the **Resources** tab
+2. You will see two dynos listed:
+   - `main` — the Pyrogram bot (`main.py`)
+   - `bot` — the PTB scheduler bot (`bot.py`)
+3. Click the **pencil ✏️ icon** next to `main`, toggle it **ON**, and click **Confirm**
+4. Repeat for `bot`
+
+> **Important:** Heroku's free tier (Eco dynos) sleeps after 30 minutes of inactivity. For bots that must stay online 24/7, use **Basic dynos** ($7/month each) or a Hobby plan.
+
+---
+
+### Step 8 — Verify the Bots are Running
+
+Check the live logs from the Heroku dashboard:
+
+1. Click **More → View logs** (top-right of the dashboard)
+2. You should see both bots starting up without errors
+
+Or use the Heroku CLI:
+
+```bash
+heroku logs --tail --app my-quizbot
+```
+
+If you see auth errors, double-check your Config Vars in **Settings → Reveal Config Vars**.
+
+---
+
+### Heroku Tips
+
+| Task | How |
+|---|---|
+| Restart a dyno | Resources tab → toggle dyno off, then on |
+| View logs | More → View logs, or `heroku logs --tail` |
+| Update the bot | Push to your fork — Heroku auto-deploys if enabled |
+| Scale dynos | Resources tab → change dyno quantity |
+| Add a Heroku Postgres (MySQL alternative) | Resources → Add-ons → search "Heroku Postgres" |
 
 ---
 
@@ -382,6 +539,8 @@ Quizbot/
 ├── c.py                     # HTML quiz report generator
 ├── config.py                # Central config (reads .env)
 ├── requirements.txt         # Python dependencies
+├── Procfile                 # Heroku process declarations (main + bot dynos)
+├── runtime.txt              # Heroku Python version pin
 ├── .env.example             # Environment variable template
 ├── .gitignore
 ├── LICENSE
@@ -406,6 +565,6 @@ Quizbot/
 
 *Built with ❤️ for educators, exam aspirants, and quiz creators.*
 
-**© 2025 devgagan · Sponsored by Qzio**
+**© 2026 devgagan.in · Sponsored by Qzio**
 
 </div>
